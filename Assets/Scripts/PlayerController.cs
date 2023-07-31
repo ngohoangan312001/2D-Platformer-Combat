@@ -4,26 +4,50 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))]
 public class PlayerController : MonoBehaviour
 {
     public float walkSpeed = 5f;
     public float runSpeed = 10f;
+    public float jumpHeight = 10;
+    public float airWalkSpeed = 3f;
+
+    Rigidbody2D rb;
+    Animator animator;
+    TouchingDirections touchingDirections;
 
     public float currentMoveSpeed
     {
         get
         { 
-            if(IsMoving)
+            if(IsMoving && !touchingDirections.IsOnWall)
             {
-                if(IsRunning)
-                {
-                    return runSpeed;
-                }
-                else
-                {
+                     //Ground move
+                     if (IsRunning)
+                     {
+                         return runSpeed;
+                     }
+                     else
+                     {
+                         return walkSpeed;
+                     }
+              /**if(touchingDirections.IsGrounded)
+              {
+                 //Ground move
+                 if (IsRunning)
+                 {
+                     return runSpeed;
+                 }
+                 else
+                 {
                     return walkSpeed;
-                }
+                 }
+                 }
+              else
+              {
+                  //Air move
+                  return airWalkSpeed;
+              } **/
             }
             else
             {
@@ -33,9 +57,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
     Vector2 moveInput;
-
     [SerializeField]
     private bool _isMoving = false;
     public bool IsMoving { get 
@@ -45,7 +67,7 @@ public class PlayerController : MonoBehaviour
         private set 
         { 
             _isMoving = value;
-            animator.SetBool("isMoving", value);
+            animator.SetBool(AnimationStrings.isMoving, value);
         } 
     }
 
@@ -60,7 +82,22 @@ public class PlayerController : MonoBehaviour
         private set
         {
             _isRunning = value;
-            animator.SetBool("isRunning", value);
+            animator.SetBool(AnimationStrings.isRunning, value);
+        }
+    }
+
+    [SerializeField]
+    private bool _isWallSliding = false;
+    public bool IsWallSliding
+    {
+        get
+        {
+            return _isWallSliding;
+        }
+        private set
+        {
+            _isWallSliding = value;
+            animator.SetBool(AnimationStrings.isWallSliding, value);
         }
     }
 
@@ -79,12 +116,11 @@ public class PlayerController : MonoBehaviour
         } 
     }
 
-    Rigidbody2D rb;
-    Animator animator;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        touchingDirections = GetComponent<TouchingDirections>();
     }
     // Start is called before the first frame update
     void Start()
@@ -101,11 +137,20 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         rb.velocity = new Vector2(moveInput.x * currentMoveSpeed, rb.velocity.y);
+        animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
+        if(IsMoving && touchingDirections.IsOnWall)
+        {
+            IsWallSliding = true;
+        }
+        else
+        {
+            IsWallSliding = false;
+        }
     }
     public void OnMove(InputAction.CallbackContext context)
     {
+        // return vector (-1,0) if move left, (1,0) if move right
         moveInput = context.ReadValue<Vector2>();
-
         IsMoving = moveInput != Vector2.zero;
 
         SetFacingDirection(moveInput);
@@ -134,6 +179,16 @@ public class PlayerController : MonoBehaviour
         else if (context.canceled)
         {
             IsRunning = false;
+        }
+    }
+
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        // TODO check if alive
+        if (context.started && (touchingDirections.IsGrounded || IsWallSliding))
+        {
+            animator.SetTrigger(AnimationStrings.jump);
+            rb.velocity = new Vector2(rb.velocity.x,jumpHeight);
         }
     }
 }
