@@ -13,5 +13,9 @@ public class AnimationStrings : MonoBehaviour
     internal static string isOnCelling = "isOnCelling";
 
     public static string yVelocity = "yVelocity";
-    public static string jump = "jump";
+    public static string jumpTrigger = "jump";
+
+    public static string attackTrigger = "attack";
+
+    public static string canMove = "canMove";
 }

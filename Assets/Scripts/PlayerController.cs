@@ -19,35 +19,43 @@ public class PlayerController : MonoBehaviour
     public float currentMoveSpeed
     {
         get
-        { 
-            if(IsMoving && !touchingDirections.IsOnWall)
+        {
+            if (CanMove)
             {
-                     //Ground move
-                     if (IsRunning)
-                     {
-                         return runSpeed;
-                     }
-                     else
-                     {
-                         return walkSpeed;
-                     }
-              /**if(touchingDirections.IsGrounded)
-              {
-                 //Ground move
-                 if (IsRunning)
-                 {
-                     return runSpeed;
-                 }
-                 else
-                 {
-                    return walkSpeed;
-                 }
-                 }
-              else
-              {
-                  //Air move
-                  return airWalkSpeed;
-              } **/
+                if (IsMoving && !touchingDirections.IsOnWall)
+                {
+                    //Ground move
+                    if (IsRunning)
+                    {
+                        return runSpeed;
+                    }
+                    else
+                    {
+                        return walkSpeed;
+                    }
+                    /**if(touchingDirections.IsGrounded)
+                    {
+                       //Ground move
+                       if (IsRunning)
+                       {
+                           return runSpeed;
+                       }
+                       else
+                       {
+                          return walkSpeed;
+                       }
+                       }
+                    else
+                    {
+                        //Air move
+                        return airWalkSpeed;
+                    } **/
+                }
+                else
+                {
+                    // 0 = not moving
+                    return 0;
+                }
             }
             else
             {
@@ -156,6 +164,14 @@ public class PlayerController : MonoBehaviour
         SetFacingDirection(moveInput);
     }
 
+    public bool CanMove { get
+        {
+            return animator.GetBool(AnimationStrings.canMove);
+        } private set { 
+
+        }
+    }
+
     private void SetFacingDirection(Vector2 moveInput)
     {
         if (moveInput.x > 0 && !IsFacingRight) 
@@ -185,10 +201,18 @@ public class PlayerController : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         // TODO check if alive
-        if (context.started && (touchingDirections.IsGrounded || IsWallSliding))
+        if (context.started && (touchingDirections.IsGrounded || IsWallSliding) && CanMove)
         {
-            animator.SetTrigger(AnimationStrings.jump);
+            animator.SetTrigger(AnimationStrings.jumpTrigger);
             rb.velocity = new Vector2(rb.velocity.x,jumpHeight);
+        }
+    }
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        // TODO check if alive
+        if (context.started)
+        {
+            animator.SetTrigger(AnimationStrings.attackTrigger);
         }
     }
 }
